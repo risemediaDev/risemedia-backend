@@ -3,8 +3,14 @@ const Schema = mongoose.Schema;
 
 const KeywordSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    keywordName: String,
-    type: String,
+    keywordName: {
+        type: String,
+        required: true
+    },
+    type: {
+        type: String,
+        default: 'default'
+    }
 })
 
 

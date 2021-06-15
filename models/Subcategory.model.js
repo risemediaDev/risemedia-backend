@@ -3,8 +3,8 @@ const Schema = mongoose.Schema;
 
 const SubCategorySchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    name: String,
-    parentCategory: String,
+    name: { type:String, required: true },
+    parentCategory: { type: mongoose.Schema.Types.ObjectId, required: true},
 })
 
 const SubCategory = mongoose.model('SubCategory', SubCategorySchema);
