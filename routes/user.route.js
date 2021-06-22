@@ -4,6 +4,7 @@ const Router = express.Router();
 const User = require("../models/User.model");
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
+const config = require('../config/env-config');
 
 // GET /users
 // ACCESSIBLE to all
@@ -33,7 +34,7 @@ Router.post("/signup", passport.authenticate('signup', {session: false}) , async
 // ACCESSIBLE to all
 // Creates a new user in the database
 Router.post('/login', async (req, res, next) => {
-      passport.authenticate('local', async (err, user, info) => {
+      passport.authenticate('local', {failureRedirect: config.config.baseUrl + '/user/login/failed'},async (err, user, info) => {
           try {
             if (err || !user) {
               const error = new Error('An error occurred.');
@@ -58,7 +59,7 @@ Router.post('/login', async (req, res, next) => {
 // ACCESSIBLE to all
 // Authentication using google
 Router.get('/login/google/callback',
-    passport.authenticate('google', {failureRedirect: '/user/login/failed', session: false}),
+    passport.authenticate('google', {failureRedirect: config.config.baseUrl + '/user/login/failed', session: false}),
     function (req, res) {
       // Successful authentication, sendToken     
       req.login(req.user, { session: false }, async (error) => {
@@ -70,13 +71,11 @@ Router.get('/login/google/callback',
       
     });
 
-Router.get('/login/facebook', passport.authenticate('facebook'));
-
 // GET /user/login/facebook/callback
 // ACCESSIBLE to all
 // Authentication using facebook
 Router.get('/login/facebook/callback',
-    passport.authenticate('facebook', {failureRedirect: '/user/login/failed', session: false}),
+    passport.authenticate('facebook', {failureRedirect: config.config.baseUrl + '/user/login/failed', session: false}),
     function (req, res) {
       // Successful authentication, sendToken     
       req.login(req.user, { session: false }, async (error) => {

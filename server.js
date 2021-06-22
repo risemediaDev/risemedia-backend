@@ -32,11 +32,13 @@ var mongoURI = "";
 if (typeof(port) === 'undefined'){
   mongoURI = "mongodb://localhost:27017/riseMediaDB"
 }else{
-  mongoURI = process.env.DB
+  mongoURI = "mongodb+srv://admin-prochnost:COXAbe9tHmKeyB6i@prochnost.i6wgh.mongodb.net/risemediaDB"
 }
 
 mongoose.connect(mongoURI, {useNewUrlParser: true, useUnifiedTopology: true})
 const connection = mongoose.connection;
+connection.on('connecting', () => console.log('Connecting to DB'));
+connection.on('open', () => console.log('Connected to DB. URI='+mongoURI));
 connection.on('error', console.error.bind(console, 'MongoDB connection error:'));
 mongoose.set('useCreateIndex', true)
 
@@ -57,22 +59,5 @@ server.use('/location', locationRouter);
 server.use('/file', fileRouter);
 
 server.listen(port || 5000, function (){
-        connection && console.log('DB connected')
-        console.log('server started')
-})
-
-// const options = {
-//   key: fs.readFileSync('./key.pem'),
-//   cert: fs.readFileSync('./cert.pem')
-// };
-
-// // https.createServer(options, function (req, res) {
-// //   res.writeHead(200);
-// //   res.end("hello world\n");
-// // }).listen(5000);
-
-// // var httpServer = http.createServer(app);
-// var httpsServer = https.createServer(options, server);
-
-// // httpServer.listen(8080);
-// httpsServer.listen(5000);
+        console.log('server started @ '+ (port || 'localhost:5000'));
+});

@@ -45,27 +45,27 @@ function(accessToken, refreshToken, profile, done) {
 }
 ));
 
-passport.use(new FacebookStrategy({
+passport.use('facebook', new FacebookStrategy({
         clientID: process.env.FACEBOOK_APP_ID,
         clientSecret: process.env.FACEBOOK_APP_SECRET,
-        callbackURL: config.baseUrl + "/user/login/facebook/callback/",
-        profileFields: ['id', 'displayName', 'emails', 'photos']
+        callbackURL: config.config.baseUrl + "/user/login/facebook/callback/",
+        profileFields: ['id', 'displayName', 'emails', 'photos'],
       },
-    
       function (accessToken, refreshToken, profile, done) {
         User.findOne({'authProviderId': profile.id, 'authProvider': "facebook"}, function(err, user) {
           if (err) {
               return done(err);
-          }
+          }  
           if(!user){
             user = new User({
               _id: new mongoose.Types.ObjectId(),
               firstName: profile.displayName.split(' ').slice(0, -1).join(' '),
               lastName: profile.displayName.split(' ').slice(-1).join(' '),
-              email: profile.emails[0].value,
-              username: profile.username || profile.emails[0].value,
+              username: profile.username || (profile.emails && profile.emails[0].value) || profile.id,
+              email: profile.emails && profile.emails[0].value,
               authProvider: 'facebook',
-              authProviderId: profile.id
+              authProviderId: profile.id,
+              avatarImg: profile.photos[0].value
             });
             user
               .save()
