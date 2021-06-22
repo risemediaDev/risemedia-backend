@@ -10,7 +10,7 @@ const UserSchema = new Schema({
     username: {type: String, required: true, unique: true},
     role: {type:String, default: 'user'},
     isDeleted: {type: Boolean, default: false},
-    password: {type: String, required: true},
+    password: {type: String},
     authProvider: {type: String, default: 'riseMedia'},
     authProviderId: {type: String},
     avatarImg: String,
@@ -20,8 +20,10 @@ const UserSchema = new Schema({
 
 UserSchema.pre('save', async function(next){
     const user = this;
-    const hash = await bcrypt.hash(this.password, 10);
-    this.password = hash;
+    if(this.authProvider == "riseMedia"){
+        const hash = await bcrypt.hash(this.password, 10);
+        this.password = hash;
+    }
     next();
 })
 
@@ -30,6 +32,7 @@ UserSchema.methods.isValidPassword = async function(password) {
     const compare = await bcrypt.compare(password, user.password);
     return compare;
 }
+
 
 const User = mongoose.model('User', UserSchema);
 

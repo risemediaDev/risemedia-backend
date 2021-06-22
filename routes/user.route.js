@@ -32,27 +32,19 @@ Router.post("/signup", passport.authenticate('signup', {session: false}) , async
 // POST /user/login
 // ACCESSIBLE to all
 // Creates a new user in the database
-Router.post(
-    '/login',
-    async (req, res, next) => {
-      passport.authenticate(
-        'login',
-        async (err, user, info) => {
+Router.post('/login', async (req, res, next) => {
+      passport.authenticate('local', async (err, user, info) => {
           try {
             if (err || !user) {
               const error = new Error('An error occurred.');
-              return next(error);
+              res.send(info);
             }
-            req.login(
-              user,
-              { session: false },
-              async (error) => {
+            req.login(user, { session: false }, async (error) => {
                 if (error) return next(error);
                 const body = { _id: user._id, username: user.username };
-                const token = jwt.sign({ user: body }, "ZXRvbW95dmVsb3NpcGVk");
+                const token = jwt.sign({ user: body }, process.env.LOCAL_TOKEN_SECRET);
                 return res.json({ token });
-              }
-            );
+            });
           } catch (error) {
             return next(error);
           }
@@ -61,4 +53,42 @@ Router.post(
     }
   );
 
+
+// GET /user/login/google/callback
+// ACCESSIBLE to all
+// Authentication using google
+Router.get('/login/google/callback',
+    passport.authenticate('google', {failureRedirect: '/user/login/failed', session: false}),
+    function (req, res) {
+      // Successful authentication, sendToken     
+      req.login(req.user, { session: false }, async (error) => {
+        if (error) return res.send(error);
+        const body = { _id: req.user._id, username: req.user.username };
+        const token = jwt.sign({ user: body }, process.env.LOCAL_TOKEN_SECRET);
+        return res.json({ token });
+    });
+      
+    });
+
+Router.get('/login/facebook', passport.authenticate('facebook'));
+
+// GET /user/login/facebook/callback
+// ACCESSIBLE to all
+// Authentication using facebook
+Router.get('/login/facebook/callback',
+    passport.authenticate('facebook', {failureRedirect: '/user/login/failed', session: false}),
+    function (req, res) {
+      // Successful authentication, sendToken     
+      req.login(req.user, { session: false }, async (error) => {
+        if (error) return res.send(error);
+        const body = { _id: req.user._id, username: req.user.username };
+        const token = jwt.sign({ user: body }, process.env.LOCAL_TOKEN_SECRET);
+        return res.json({ token });
+    });
+      
+    });
+
+Router.get('/login/failed', (req, res) => {
+  res.send('failed')
+})
 module.exports = Router

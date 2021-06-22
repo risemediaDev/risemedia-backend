@@ -4,13 +4,18 @@ const path = require('path');
 const port = process.env.PORT;
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-require('./auth/auth');
+require('./config/auth');
+require('./config/env-config')
 const gridFS = require('gridfs-stream')
-
+const passport = require('passport');
+const https = require('https');
+const fs = require('fs')
 // -----------create express application------------
 const server = express();
 server.use(bodyParser.json()); 
 server.use(bodyParser.urlencoded({ extended: false }));
+
+// server.use(passport.intialize())
 
 
 // Routes
@@ -55,3 +60,19 @@ server.listen(port || 5000, function (){
         connection && console.log('DB connected')
         console.log('server started')
 })
+
+// const options = {
+//   key: fs.readFileSync('./key.pem'),
+//   cert: fs.readFileSync('./cert.pem')
+// };
+
+// // https.createServer(options, function (req, res) {
+// //   res.writeHead(200);
+// //   res.end("hello world\n");
+// // }).listen(5000);
+
+// // var httpServer = http.createServer(app);
+// var httpsServer = https.createServer(options, server);
+
+// // httpServer.listen(8080);
+// httpsServer.listen(5000);
