@@ -3,16 +3,22 @@ const Router = express.Router();
 const Article = require("../models/Article.model")
 const mongoose = require('mongoose')
 const passport = require('passport');
+const { validate, getArticleValidationRules, createArticleValidationRules } = require('../validators/articleValidator');
 
 // GET /article
 // ACCESSIBLE to all
 // Displays all the articles in the database
-Router.get('/', async (req,res, next)=>{
+Router.get('/', getArticleValidationRules(), validate, async (req,res)=>{
     var criteria = {
         isReviewed: false,
         isDeleted: false,
-    }
-    switch(req.body.criteria){
+    };
+    var page = 1;
+    var articlesPerPage = 3;
+    var totalArticles = await Article.countDocuments();
+    var skip = 0;
+
+    switch(req.body && req.body.criteria){
         case 'articleId':
             criteria._id = req.body.articleId
             break;
@@ -21,11 +27,14 @@ Router.get('/', async (req,res, next)=>{
             break;
         default:
             break;
-    }
+    };
+
+    page = req.body && req.body.page;
+    skip = (page-1) * articlesPerPage;
 
     try{
         await Article
-            .find(criteria).sort({publishedOn: -1})
+            .find(criteria).sort({publishedOn: -1}).limit(articlesPerPage).skip(skip)
             .populate({path: 'author', select: 'username firstName lastName -_id'})
             .populate('categoryId')
             .populate({path: 'location', select: 'name -_id'})
@@ -41,7 +50,7 @@ Router.get('/', async (req,res, next)=>{
 //POST /article/create
 //ACCESSIBLE to authenticated user
 //used to store the articles
-Router.post('/create', passport.authenticate('jwt', {session: false}), function (req, res) {
+Router.post('/create', passport.authenticate('jwt', {session: false}), createArticleValidationRules(), validate, function (req, res) {
     if (req.isAuthenticated()){
         const article = new Article({
             _id: new mongoose.Types.ObjectId(),

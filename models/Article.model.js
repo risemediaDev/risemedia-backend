@@ -5,7 +5,7 @@ const ArticleSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
     title: {type: String, required: true},
     content: String,
-    keywords: String,
+    keywords: Array,
     articleHeadImage: String,
     descText: String,
     location: {
