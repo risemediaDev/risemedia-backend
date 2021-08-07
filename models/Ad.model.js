@@ -3,11 +3,14 @@ const Schema = mongoose.Schema;
 
 const AdSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    image: String,
-    placedOn: {type: Number, default: new Date()},
-    expiresOn: {type: Number},
-    proprietor: String,
-    targetSpace: String,
+    image: {type: String, required: true},
+    placedOn: {type: Number, required: true},
+    expiresOn: {type: Number, required: true},
+    proprietor: {
+        name: {type: String, required: true},
+        clientId: {type: String, required: true},
+    },
+    targetSpace: {type: String, required: true},
 })
 
 

@@ -1,56 +1,56 @@
 const express = require('express');
 const Router = express.Router();
-const Ad = require('../models/Ad.model');
+const Cartoon = require('../models/Cartoon.model');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const { request } = require('express');
 
-// GET /ad
+// GET /cartoon
 // ACCESSIBLE to authorized admins and superadmins
-// Displays all the ads in the database
+// Displays all the cartoons in the database
 Router.get('/', passport.authenticate('authAdmin', { session: false }), async (req, res) => {
     var page = 1;
-    var adsPerPage = 10;
+    var cartoonsPerPage = 10;
     var skip = 0;
     page = req.query && req.query.page || 1;
-    skip = (page - 1) * adsPerPage;
+    skip = (page - 1) * cartoonsPerPage;
 
     const today = new Date().getTime();
     let query = {};
 
     switch (req.query && req.query.criteria) {
-        case 'onGoingAds':
-            query = { $and: [{ placedOn: { $lt: today } }, { expiresOn: { $gte: today } }] }
+        case 'publishedToday':
+            query = { publishedOn: {$gt: new Date().setHours(0,0,0,0)} }
             break;
-        case 'scheduledAds':
-            query = { $and: [{ placedOn: { $gt: today } }, { expiresOn: { $gte: today } }] }
-            break;
+        // case 'all':
+        //     query = { }
+        //     break;
         default:
             break;
     }
-    await Ad
+    await Cartoon
         .find(query)
-        .sort({ _id: -1 })
-        .limit(adsPerPage)
+        .sort({ publishedOn: -1 })
+        .limit(cartoonsPerPage)
         .skip(skip)
         .then(result => {
-            console.log(`Sent list of ads by creteria ${req.query.criteria}`)
+            console.log(`Sent list of cartoons by creteria ${req.query.criteria}`)
             res.json(result)
 
         })
         .catch(err => {
-            console.log(`failed to send list of ads because ${err}`)
+            console.log(`failed to send list of cartoons because ${err}`)
             res.json({ error: err })
         })
 });
 
-// GET /ad/:id
+// GET /cartoon/:id
 // ACCESSIBLE to auth user
-// Displays a ad by id
+// Displays a cartoon by id
 Router.get('/:id', passport.authenticate('authAdmin', { session: false }), (req, res, next) => {
     try {
         var id = req.params.id;
-        Ad
+        Cartoon
             .find({ _id: id })
             .then(result => res.json(result))
             .catch(error => res.json(error));
@@ -59,27 +59,23 @@ Router.get('/:id', passport.authenticate('authAdmin', { session: false }), (req,
     }
 });
 
-// POST /ad/create
+// POST /cartoon/add
 // ACCESSIBLE to authenticated users
-// Creates a new ad
-Router.post('/create', passport.authenticate('authAdmin', { session: false }), async (req, res, next) => {
+// Creates a new cartoon
+Router.post('/add', passport.authenticate('authAdmin', { session: false }), async (req, res, next) => {
     try {
-        const newAd = new Ad({
+        const newCartoon = new Cartoon({
             _id: new mongoose.Types.ObjectId(),
             image: req.body.image,
-            expiresOn: req.body.expiresOn,
-            proprietor: req.body.proprietor,
-            targetSpace: req.body.targetSpace,
-            placedOn: req.body.placedOn,
         })
-        newAd
+        newCartoon
             .save()
             .then(result => {
-                console.log(`Ad created by ${req.user._id}`)
+                console.log(`Cartoon added by ${req.user._id}`)
                 res.json(result)
             })
             .catch(err => {
-                console.log(`Failed to create ad because ${err}`)
+                console.log(`Failed to add cartoon because ${err}`)
                 res.status(400).json({ error: err })
             })
     } catch (error) {
@@ -93,13 +89,13 @@ Router.patch('/edit', passport.authenticate('authAdmin', {session: false}), asyn
     delete req.body._id;
     delete req.body.__v;
     var update = req.body;
-    await Ad.findByIdAndUpdate(
+    await Cartoon.findByIdAndUpdate(
         { _id: adId },
         { $set: { ...update }},
         { upsert: true, new: true },
         (err, data) => {
           if (err) {
-            console.log(`failed to update Ad ${id} requested by ${req.user._id} because of ${err}`)
+            console.log(`failed to update Cartoon ${id} requested by ${req.user._id} because of ${err}`)
             res.status(400).json({error: err});
             return;
           }
@@ -107,18 +103,18 @@ Router.patch('/edit', passport.authenticate('authAdmin', {session: false}), asyn
           res.json(data)
         })
 })
-// DELETE /ad/delete/:id
+// DELETE /cartoon/delete/:id
 // ACCESSIBLE to authenticated users
-// Deletes a ad by id
+// Deletes a cartoon by id
 Router.delete('/delete/:id', passport.authenticate('authAdmin', { session: false }), (req, res) => {
-    Ad
+    Cartoon
         .deleteOne({ _id: req.params.id })
         .then(result => {
-            console.log(`Delete ad ${req.params.id} as requested by ${req.user._id}`)
+            console.log(`Delete cartoon ${req.params.id} as requested by ${req.user._id}`)
             res.send(result)
         })
         .catch(error => {
-            console.log(`Failed to delete Ad ${req.params.id} because ${error}`)
+            console.log(`Failed to delete Cartoon ${req.params.id} because ${error}`)
             return res.status(400).json({ error: error });
         })
 });

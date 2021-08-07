@@ -9,34 +9,47 @@ const passport = require('passport');
 // Displays all the locations in the database
 Router.get('/', async (req, res, next) => {
     try{
+        var page = 1;
+        var locationPerPage = 5;
+        var skip = 0;
+        
+        page = req.query && req.query.page;
+        skip = (page-1) * locationPerPage;
+        
         await Location
-            .find({})
-            .then(result => res.json(result))
-            .catch(err => res.json(error)) 
+            .find({}).limit(locationPerPage).skip(skip)
+            .then(result => {
+                console.log(`Sent list of locations ${page}`);
+                res.status(200).json(result);
+            })
+            .catch(err => {
+                console.log('Failed to send list of locations because ' + err)
+                res.status(400).json(err)
+            }) 
     } catch(error){
         return next(error)
     } 
 });
 
-// GET /location/:id
+// GET /location/id
 // ACCESSIBLE to auth user
 // Displays a location by id
-Router.get('/:id', passport.authenticate('jwt', {session: false}), (req,res, next)=>{
+Router.get('/id', passport.authenticate('jwt', {session: false}), (req,res, next)=>{
     try{
-        var id = req.params.id;
+        var idList = req.query.id;
         Location
-            .find({_id: id})
+            .find({_id: { $in: idList}})
             .then(result => res.json(result))
-            .catch(error => res.json(error));
+            .catch(error => res.status(400).json(error));
     } catch(error){
         return next(error);
     }
 });
 
-// POST /location/create
+// POST /location/add
 // ACCESSIBLE to authenticated users
-// Creates a new location
-Router.post('/create', passport.authenticate('jwt', {session: false}),(req,res, next)=>{
+// adds a new location
+Router.post('/add', passport.authenticate('companyUser', {session: false}),(req,res, next)=>{
     try{
         const newLocation = new Location({
             _id: new mongoose.Types.ObjectId(),

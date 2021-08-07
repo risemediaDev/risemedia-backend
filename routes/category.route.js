@@ -1,6 +1,7 @@
 const express = require('express');
 const Router = express.Router();
 const Category = require('../models/Category.model');
+const SubCategory = require('../models/Subcategory.model');
 const mongoose = require('mongoose');
 const passport = require('passport');
 
@@ -11,21 +12,37 @@ Router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
     if(req.isAuthenticated()){
         Category
             .find({})
-            .then(result => res.json(result))
-            .catch(err => res.json(error))
+            .then(result => res.status(200).json(result))
+            .catch(err => res.status(400).json({error: err}))
     }    
 });
 
 // GET /category/:id
 // ACCESSIBLE to auth user
 // Displays a category by a set criteria
-Router.get('/', passport.authenticate('jwt', {session: false}), (req,res)=>{
+Router.get('/:id', passport.authenticate('jwt', {session: false}), async (req,res)=>{
     if(req.isAuthenticated()){
-        var id = req.body.id;
-        Category
-            .find({_id: id})
-            .then(result => res.json(result))
-            .catch(error => res.json(error));
+        var id = req.params.id;
+        var query = {_id: id};
+        if(!mongoose.isValidObjectId(id)){
+            query = {name: id};
+        }
+        await Category
+            .find(query)
+            .then(async (categoryInfo) => {
+                if(!categoryInfo[0]) return res.status(200).json([...categoryInfo, []]);
+                await SubCategory.find({parentCategory:categoryInfo[0]._id}).then((subCategories) => {
+                    res.status(200).json([
+                        ...categoryInfo, 
+                        [...subCategories]
+                        
+                    ])
+                })
+            })
+            .catch(error => {
+                console.log(`failed to send category details for ${id} because ${error}`)
+                res.json(error)
+            });
     }
 });
 
@@ -42,6 +59,29 @@ Router.post('/create', passport.authenticate('jwt', {session: false}),(req,res)=
             .save()
             .then(result => res.send(result))
             .catch(err => res.send(err))
+    }
+});
+
+// POST category/subcategory/create
+// ACCESSIBLE to authenticated users
+// Creates a new subcategory
+Router.post('/subcategory/create', passport.authenticate('jwt', {session: false}),(req,res)=>{
+    if(req.isAuthenticated()){
+        const newSubCategory = new SubCategory({
+            _id: new mongoose.Types.ObjectId(),
+            name: req.body.name,
+            parentCategory: req.body.parentCategory
+        })
+        newSubCategory
+            .save()
+            .then(result => {
+                console.log(`${req.user._id} created subcategory ${result.name}`)
+                res.status(200).json(result)
+            })
+            .catch(err => {
+                console.log(`failed to create subcategory ${req.body.name} because ${err}`)
+                res.status(400).json({error: err})
+            })
     }
 });
 

@@ -8,17 +8,14 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const port = process.env.PORT;
 const config = require('./env-config');
-
-
-passport.use(new GoogleStrategy({
+const googleStrategy = {
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: config.config.baseUrl + "/user/login/google/callback/",
   userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
-},
-
-function(accessToken, refreshToken, profile, done) {
-  User.findOne({'authProviderId': profile.id, 'authProvider': "google"}, function(err, user) {
+}
+const verifyCallback = async (accessToken, refreshToken, profile, done) => {
+  User.findOne({'authProviderId': profile.id, 'authProvider': profile.provider}, function(err, user) {
     if (err) {
         return done(err);
     }
@@ -27,9 +24,9 @@ function(accessToken, refreshToken, profile, done) {
             _id: new mongoose.Types.ObjectId(),
             firstName: profile.displayName.split(' ').slice(0, -1).join(' '),
             lastName: profile.displayName.split(' ').slice(-1).join(' '),
-            email: profile.emails[0].value,
+            email: profile.emails && profile.emails[0].value,
             username: profile.username || profile.emails[0].value,
-            authProvider: 'google',
+            authProvider: profile.provider,
             authProviderId: profile.id
         });
         user
@@ -43,7 +40,8 @@ function(accessToken, refreshToken, profile, done) {
     }
   })
 }
-));
+
+passport.use(new GoogleStrategy(googleStrategy, verifyCallback));
 
 passport.use('facebook', new FacebookStrategy({
         clientID: process.env.FACEBOOK_APP_ID,
@@ -52,7 +50,7 @@ passport.use('facebook', new FacebookStrategy({
         profileFields: ['id', 'displayName', 'emails', 'photos'],
       },
       function (accessToken, refreshToken, profile, done) {
-        User.findOne({'authProviderId': profile.id, 'authProvider': "facebook"}, function(err, user) {
+        User.findOne({'authProviderId': profile.id, 'authProvider': profile.provider}, function(err, user) {
           if (err) {
               return done(err);
           }  
@@ -63,9 +61,9 @@ passport.use('facebook', new FacebookStrategy({
               lastName: profile.displayName.split(' ').slice(-1).join(' '),
               username: profile.username || (profile.emails && profile.emails[0].value) || profile.id,
               email: profile.emails && profile.emails[0].value,
-              authProvider: 'facebook',
+              authProvider: profile.provider,
               authProviderId: profile.id,
-              avatarImg: profile.photos[0].value
+              avatarImg: profile.photos && profile.photos[0].value
             });
             user
               .save()
@@ -83,18 +81,19 @@ passport.use('facebook', new FacebookStrategy({
     
 passport.use('signup', new localStrategy(
     {
-        usernameField: 'username',
+        usernameField: 'email',
         passwordField: 'password',
         passReqToCallback: true
     },
-      async (req, username, password, done) => {
+      async (req, email, password, done) => {
         try {
           const user = await User.create({ 
-            username, 
+            email, 
             password,
             _id: new mongoose.Types.ObjectId(),
             firstName: req.body.firstName,
             lastName: req.body.lastName,
+            username: req.body.username || email
             });
           return done(null, user);
         } catch (error) {
@@ -106,12 +105,12 @@ passport.use('signup', new localStrategy(
 
   passport.use('local', new localStrategy(
       {
-        usernameField: 'username',
+        usernameField: 'email',
         passwordField: 'password'
       },
-      async (username, password, done) => {
+      async (email, password, done) => {
         try {
-          const user = await User.findOne({ username }); 
+          const user = await User.findOne({ email }); 
           if (!user) {
             return done(null, false, { message: 'User not found' });
           }
@@ -126,6 +125,47 @@ passport.use('signup', new localStrategy(
       }
     )
   );
+
+passport.use('authAdmin',
+  new JWTstrategy(
+    {
+      secretOrKey: process.env.LOCAL_TOKEN_SECRET,
+      jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken()
+    },
+    async (token, done) => {
+      try {
+        await User.findOne({_id: token.user._id, isDeleted: false}, (err, user) => {
+          if(err) return res.status(401).json({'message':'user not found'});
+          if(user && ![0,1].includes(user.role)) return res.status(401).json({'message':'you are not authorized'});
+          return done(null, token.user);
+        })
+      } catch (error) {
+        done(error);
+      }
+    }
+  )
+);
+
+passport.use('companyUser',
+  new JWTstrategy(
+    {
+      secretOrKey: process.env.LOCAL_TOKEN_SECRET,
+      jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken()
+    },
+    async (token, done) => {
+      try {
+        await User.findOne({_id: token.user._id, isDeleted: false}, (err, user) => {
+          if(err) return res.status(401).json({'message':'user not found'});
+          if(user && ![0,1,2].includes(user.role)) return done({error: 'You are not authorized'});
+          token.user.role = user.role
+          return done(null, token.user);
+        })
+      } catch (error) {
+        done(error);
+      }
+    }
+  )
+);
 
 passport.use(
   new JWTstrategy(
@@ -142,3 +182,5 @@ passport.use(
     }
   )
 );
+
+module.exports = { verifyCallback }

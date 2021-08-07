@@ -5,7 +5,7 @@ const ArticleSchema = new Schema({
     _id: mongoose.Schema.Types.ObjectId,
     title: {type: String, required: true},
     content: String,
-    keywords: Array,
+    keywords: String,
     articleHeadImage: String,
     descText: String,
     location: {
@@ -22,9 +22,17 @@ const ArticleSchema = new Schema({
         type: Number, 
         default: new Date().getTime()
     },
+    isDraft:{
+        type: Boolean,
+        default: true,
+    },
     publishedOn:{
         type: Number, 
         default: new Date().getTime()
+    },
+    isPublished:{
+        type: Boolean,
+        default: false
     },
     views: {
         type: Number, 
@@ -42,6 +50,14 @@ const ArticleSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId , 
         ref: 'Category', 
         required: true
+    },
+    subCategoryId: {
+        type: mongoose.Schema.Types.ObjectId , 
+        ref: 'SubCategory', 
+    },
+    isHeadline:{
+        type: Boolean, 
+        default: false
     }
 });
 
