@@ -20,7 +20,7 @@ Router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
 // GET /category/:id
 // ACCESSIBLE to auth user
 // Displays a category by a set criteria
-Router.get('/:id', passport.authenticate('jwt', {session: false}), async (req,res)=>{
+Router.get('/:id', async (req,res)=>{
     if(req.isAuthenticated()){
         var id = req.params.id;
         var query = {_id: id};
