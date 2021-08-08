@@ -21,7 +21,6 @@ Router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
 // ACCESSIBLE to auth user
 // Displays a category by a set criteria
 Router.get('/:id', async (req,res)=>{
-    if(req.isAuthenticated()){
         var id = req.params.id;
         var query = {_id: id};
         if(!mongoose.isValidObjectId(id)){
@@ -32,7 +31,8 @@ Router.get('/:id', async (req,res)=>{
             .then(async (categoryInfo) => {
                 if(!categoryInfo[0]) return res.status(200).json([...categoryInfo, []]);
                 await SubCategory.find({parentCategory:categoryInfo[0]._id}).then((subCategories) => {
-                    res.status(200).json([
+                    console.log('sent category list of ' + categoryInfo[0].name)
+                    return res.status(200).json([
                         ...categoryInfo, 
                         [...subCategories]
                         
@@ -41,9 +41,8 @@ Router.get('/:id', async (req,res)=>{
             })
             .catch(error => {
                 console.log(`failed to send category details for ${id} because ${error}`)
-                res.json(error)
+                return res.json(error)
             });
-    }
 });
 
 // POST /category/create
