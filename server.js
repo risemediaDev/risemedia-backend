@@ -63,7 +63,6 @@ server.use('/location', locationRouter);
 server.use('/file', fileRouter);
 server.use('/cartoon', cartoonRouter);
 server.use('/trending', trendingRouter);
-
 server.listen(port || 5000, function (){
         console.log('server started @ '+ (port || 'localhost:5000'));
 });

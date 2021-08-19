@@ -59,6 +59,23 @@ Router.get('/:id', passport.authenticate('authAdmin', { session: false }), (req,
     }
 });
 
+Router.get('/get/random', async(req, res) => {
+    try {
+        Cartoon.count().exec(function (err, count) {
+            var random = Math.floor(Math.random() * count)
+            Cartoon.findOne().skip(random).exec(
+                function (err, result) {
+                    console.log('sent a cartoon randomly')
+                    res.status(200).send(result)
+                })
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.status(400).send({ error: error })
+    }
+});
+
 // POST /cartoon/add
 // ACCESSIBLE to authenticated users
 // Creates a new cartoon

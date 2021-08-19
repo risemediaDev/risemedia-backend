@@ -17,7 +17,7 @@ Router.get('/', getArticleValidationRules(), validate, async (req, res) => {
         isDeleted: false,
     };
     var page = 1;
-    var articlesPerPage = 10;
+    var articlesPerPage = 5;
 
     var skip = 0;
 
@@ -152,20 +152,36 @@ Router.get('/auth', passport.authenticate('companyUser', { session: false }), as
 Router.get('/search', async (req, res) => {
     let searchString = req.query && req.query.searchString;
     if(!searchString) return res.status(400).json({error: 'No searchString'})
+    var page = 1;
+    var articlesPerPage = 5;
+
+    var skip = 0;
+
+    var words = []
+    if(searchString.includes(',')){
+        words = searchString.split(',')
+    }else{
+        words = searchString.split(' ')
+    }
+    var regexMetachars = /[(){[*+?.\\^$|]/g;
+    for (var i = 0; i < words.length; i++) {
+        words[i] = words[i].replace(regexMetachars, "\\$&").trim();
+        if(words[i] == ""){
+            words.splice(i, 1)
+        }
+    }
+    var regex = new RegExp("\\b(?:" + words.join("|") + ")\\b", "gi");
+    page = req.query && req.query.page;
+    skip = (page - 1) * articlesPerPage;
     let articlesCat = await Article
         .find({ $or: [
-            { title: { $regex: new RegExp(searchString, 'i') } }, 
-            { keywords: { $regex: new RegExp(searchString, 'i') } }
-        ]}).sort({ publishedOn: -1 }).populate({ path: 'author', select: 'username firstName lastName -_id' })
+            { title: { $regex: regex } }, 
+            { keywords: { $regex: regex } }
+        ]}).sort({ publishedOn: -1 }).limit(articlesPerPage).skip(skip)
+        .populate({ path: 'author', select: 'username firstName lastName -_id' })
         .populate('categoryId').populate('subCategoryId')
         .populate({ path: 'location', select: 'name _id' })
 
-
-    // for (let i = 0; i < articlesCat.length; i++) {
-    //     articlesCat[i].content = articlesCat[i].content.replace(/<[^>]*>?/gm, ' ');
-    //     articlesCat[i].content = articlesCat[i].content.replace(/&nbsp;/g, ' ')
-    //     articlesCat[i].content = articlesCat[i].content.substring(0, 80);
-    // }
     return res.json(articlesCat)
 })
 

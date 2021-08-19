@@ -59,6 +59,24 @@ Router.get('/:id', passport.authenticate('authAdmin', { session: false }), (req,
     }
 });
 
+Router.get('/get/random', async(req, res) => {
+    try {
+        const today = new Date().getTime();
+        Ad.count().exec(function (err, count) {
+            var random = Math.floor(Math.random() * count)
+            Ad.findOne({ $and: [{ placedOn: { $lt: today } }, { expiresOn: { $gte: today } }] }).skip(random).exec(
+                function (err, result) {
+                    console.log('sent a ad randomly')
+                    res.status(200).send(result)
+                })
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.status(400).send({ error: error })
+    }
+});
+
 // POST /ad/create
 // ACCESSIBLE to authenticated users
 // Creates a new ad

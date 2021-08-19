@@ -135,8 +135,8 @@ passport.use('authAdmin',
     async (token, done) => {
       try {
         await User.findOne({_id: token.user._id, isDeleted: false}, (err, user) => {
-          if(err) return res.status(401).json({'message':'user not found'});
-          if(user && ![0,1].includes(user.role)) return res.status(401).json({'message':'you are not authorized'});
+          if(err) return done(err);
+          if(user && ![0,1].includes(user.role)) return done({'error':'you are not authorized'});
           return done(null, token.user);
         })
       } catch (error) {
