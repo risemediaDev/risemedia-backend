@@ -42,6 +42,11 @@ UserSchema.methods.isValidPassword = async function(password) {
     return compare;
 }
 
+UserSchema.methods.toJSON = function(){
+    var obj = this.toObject()
+    delete obj.password
+    return obj
+}
 
 const User = mongoose.model('User', UserSchema);
 

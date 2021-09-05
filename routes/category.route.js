@@ -97,5 +97,26 @@ Router.delete('/delete', passport.authenticate('jwt', {session: false}),(req,res
     }
 });
 
+// DELETE category/subcategory/delete
+// ACCESSIBLE to authenticated users
+// Deletes a subcategory by id
+Router.delete('/subcategory/delete', passport.authenticate('jwt', {session: false}),(req,res)=>{
+    if(req.isAuthenticated()){
+        SubCategory
+            .deleteOne({_id: req.body.categoryId})
+            .then(result => res.send(result))
+            .catch(err => res.send(err))
+    }
+});
+
+
+Router.post('/subcategory/edit', passport.authenticate('companyUser', {session: false}), (req, res) => {
+    if(!req.body._id || !req.body.name) {return res.status(400)}
+    let id = req.body._id;
+    let updatedName = req.body.name;
+    SubCategory.findByIdAndUpdate(id , {name: updatedName}).then(result => {
+        res.send(result)
+    }).catch(err => res.status(400).send(err))
+});
 
 module.exports = Router;

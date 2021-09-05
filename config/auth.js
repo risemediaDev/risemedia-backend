@@ -156,8 +156,7 @@ passport.use('companyUser',
       try {
         await User.findOne({_id: token.user._id, isDeleted: false}, (err, user) => {
           if(err) return res.status(401).json({'message':'user not found'});
-          if(user && ![0,1,2].includes(user.role)) return done({error: 'You are not authorized'});
-          token.user.role = user.role
+          if(user && user.role && ![0,1,2].includes(user.role)) return done({error: 'You are not authorized'});
           return done(null, token.user);
         })
       } catch (error) {
