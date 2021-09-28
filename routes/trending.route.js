@@ -34,6 +34,7 @@ Router.get('/', async (req, res) => {
         .sort({ _id: -1 })
         .limit(trendingsPerPage)
         .skip(skip)
+        .populate({ path: 'category', select: 'name -_id' })
         .then(result => {
             console.log(`Sent list of trendings by creteria ${req.query.criteria}`)
             res.json(result)
@@ -70,6 +71,7 @@ Router.post('/add', passport.authenticate('authAdmin', { session: false }), asyn
             label: req.body.label,
             isTopic: req.body.isTopic,
             keywords: req.body.keywords,
+            category: req.body.categoryId
         })
         newTrend
             .save()

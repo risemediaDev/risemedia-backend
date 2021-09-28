@@ -42,6 +42,9 @@ Router.get('/', getArticleValidationRules(), validate, async (req, res) => {
             };
             criteria.categoryId = category[0]._id;
             break;
+        case 'generalNews':
+            criteria.isGeneralNews = true;
+            break;
         default:
             break;
     };

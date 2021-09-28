@@ -58,6 +58,10 @@ const ArticleSchema = new Schema({
     isHeadline:{
         type: Boolean, 
         default: false
+    },
+    isGeneralNews:{
+        type: Boolean, 
+        default: false
     }
 });
 
